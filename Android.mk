@@ -21,4 +21,5 @@ LOCAL_MODULE := apachehttp-hostdex
 LOCAL_MODULE_TAGS := optional
 LOCAL_SRC_FILES := $(call all-java-files-under,src)
 LOCAL_MODULE_TAGS := optional
+LOCAL_JAVA_LIBRARIES := tcmiface-hostdex
 include $(BUILD_HOST_DALVIK_JAVA_LIBRARY)
