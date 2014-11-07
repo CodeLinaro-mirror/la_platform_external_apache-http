@@ -103,8 +103,7 @@ public class SingleClientConnManager implements ClientConnectionManager {
     /** Indicates whether this connection manager is shut down. */
     protected volatile boolean isShutDown;
 
-
-
+    private TcmIdleTimerMonitor mIdleMonitor;
 
     /**
      * Creates a new simple connection manager.
@@ -126,6 +125,7 @@ public class SingleClientConnManager implements ClientConnectionManager {
         this.lastReleaseTime = -1L;
         this.alwaysShutDown  = false; //@@@ from params? as argument?
         this.isShutDown      = false;
+        mIdleMonitor = new TcmIdleTimerMonitor(this);
 
     } // <constructor>
 
