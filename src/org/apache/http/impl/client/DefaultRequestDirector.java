@@ -94,6 +94,8 @@ import org.apache.http.protocol.HttpContext;
 import org.apache.http.protocol.HttpProcessor;
 import org.apache.http.protocol.HttpRequestExecutor;
 
+import java.lang.reflect.Method;
+import java.lang.reflect.InvocationTargetException;
 /**
  * Default implementation of {@link RequestDirector}.
  * <br/>
@@ -156,6 +158,8 @@ public class DefaultRequestDirector implements RequestDirector {
     protected ManagedClientConnection managedConn;
 
     private int redirectCount;
+
+    static int attRedirectCount;
 
     private int maxRedirects;
     
@@ -926,6 +930,59 @@ public class DefaultRequestDirector implements RequestDirector {
             redirectCount++;
             
             URI uri = this.redirectHandler.getLocationURI(response, context);
+
+            try {
+                Class<?> zeroBalanceHelper = Class
+                        .forName("android.net.ZeroBalanceHelper");
+                Object helperObject = zeroBalanceHelper.newInstance();
+
+                Method bgDataProperty = zeroBalanceHelper.getMethod(
+                                "getBgDataProperty", null);
+                bgDataProperty.setAccessible(true);
+                String isDisabled = (String) bgDataProperty.invoke(
+                                helperObject, null);
+
+                if (isDisabled.equals("false")) {
+                    // Checking the redirect URL to set the data block property
+                    // when zero balance is hit
+                    Header locationHeader = response.getFirstHeader("location");
+                    String location = locationHeader.getValue();
+
+                    Method getRedirectUrl = zeroBalanceHelper.getMethod(
+                                    "getConfiguredRedirectURL", null);
+                    getRedirectUrl.setAccessible(true);
+                    String redirectUrl = (String) getRedirectUrl.invoke(
+                                    helperObject, null);
+
+                    if (redirectUrl != null && location.contains(redirectUrl)) {
+                        attRedirectCount++;
+                        if (attRedirectCount >= 3) {
+                            this.log.debug(
+                                    "zerobalance:Background Data will be disabled");
+                            Method setBgDataProperty = zeroBalanceHelper
+                                    .getMethod("setBgDataProperty", String.class);
+                            setBgDataProperty.setAccessible(true);
+                            setBgDataProperty.invoke(helperObject, "true");
+                            attRedirectCount = 0;
+                        }
+                    } else {
+                        attRedirectCount = 0;
+                    }
+                } else {
+                    this.log.debug("zerobalance:Background Data is already disabled");
+                    attRedirectCount = 0;
+                }
+            } catch (ClassNotFoundException ex) {
+                ex.printStackTrace();
+            } catch (NoSuchMethodException ex) {
+                ex.printStackTrace();
+            } catch (InstantiationException ex) {
+                ex.printStackTrace();
+            } catch (IllegalAccessException ex) {
+                ex.printStackTrace();
+            } catch (InvocationTargetException ex) {
+                ex.printStackTrace();
+            }
 
             HttpHost newTarget = new HttpHost(
                     uri.getHost(), 
