@@ -45,7 +45,7 @@ import org.apache.http.impl.auth.GbaCredentialsCreator;
  * @author <a href="mailto:oleg at ural.ru">Oleg Kalnichevski</a>
  *
  * @version $Revision: 496070 $
- * 
+ *
  * @since 4.0
  *
  * @deprecated Please use {@link java.net.URL#openConnection} instead.
@@ -80,7 +80,9 @@ public class RequestUserAgent implements HttpRequestInterceptor {
             if(useragent != null || gbaUserAgent != null) request.addHeader(HTTP.USER_AGENT, sb.toString());
         } else {
             String useragent = request.getFirstHeader(HTTP.USER_AGENT).getValue();
-            boolean isGbaSet = useragent.contains("3gpp-gba");
+            boolean isGbaSet = false;
+            if(useragent != null)
+                isGbaSet = useragent.contains("3gpp-gba");
             if(gbaUserAgent != null && !isGbaSet) {
                 StringBuilder sb = new StringBuilder();
                 sb.append(useragent);
@@ -90,5 +92,4 @@ public class RequestUserAgent implements HttpRequestInterceptor {
             }
         }
     }
-    
 }
